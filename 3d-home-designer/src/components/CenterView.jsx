@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ArrowUp, Plus, PanelLeftClose, PanelRightClose, PanelLeft, PanelRight } from 'lucide-react';
+import { ChevronDown, ArrowUp, Plus, PanelLeftClose, PanelRightClose, PanelLeft, PanelRight, X } from 'lucide-react';
 
 export default function CenterView({
     children,
@@ -8,14 +8,16 @@ export default function CenterView({
     leftSidebarOpen,
     rightSidebarOpen,
     onToggleLeftSidebar,
-    onToggleRightSidebar
+    onToggleRightSidebar,
+    selectedSurfaces = [],
+    onRemoveSurface
 }) {
     const [activeFloor, setActiveFloor] = useState(1);
     const [inputText, setInputText] = useState('');
 
     const handleSubmit = () => {
-        if (inputText.trim()) {
-            console.log('Submitted:', inputText);
+        if (inputText.trim() || selectedSurfaces.length > 0) {
+            console.log('Submitted:', { text: inputText, surfaces: selectedSurfaces });
             setInputText('');
         }
     };
@@ -74,8 +76,8 @@ export default function CenterView({
                             key={floor}
                             onClick={() => setActiveFloor(floor)}
                             className={`text-right text-xl font-normal px-2 py-1 transition-all ${activeFloor === floor
-                                ? 'text-white'
-                                : 'text-white/40 hover:text-white/70'
+                                    ? 'text-white'
+                                    : 'text-white/40 hover:text-white/70'
                                 }`}
                         >
                             <span className={activeFloor === floor ? 'underline underline-offset-4' : ''}>
@@ -95,9 +97,30 @@ export default function CenterView({
             {/* Bottom Center: Chat Input Box */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 w-[500px] max-w-[90%]">
                 <div className="bg-[#2a2a2a]/90 backdrop-blur-md border border-white/20 rounded-2xl p-4">
+
+                    {/* Selected Surfaces Tags */}
+                    {selectedSurfaces.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                            {selectedSurfaces.map((surface) => (
+                                <div
+                                    key={surface}
+                                    className="flex items-center gap-1.5 bg-[#3a3a3a] border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white/80"
+                                >
+                                    <span>{surface}</span>
+                                    <button
+                                        onClick={() => onRemoveSurface(surface)}
+                                        className="text-white/40 hover:text-white transition-colors"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Input Row */}
                     <div className="flex items-center gap-3">
-                        {/* Plus Button - no circle */}
+                        {/* Plus Button */}
                         <button className="text-white/60 hover:text-white transition-colors p-1">
                             <Plus className="w-6 h-6" />
                         </button>
@@ -112,10 +135,10 @@ export default function CenterView({
                             className="flex-1 bg-transparent border-none outline-none text-white placeholder-white/30 text-base"
                         />
 
-                        {/* Send Button - no circle */}
+                        {/* Send Button */}
                         <button
                             onClick={handleSubmit}
-                            className={`text-white/60 hover:text-white transition-colors p-1 ${inputText.trim() ? 'text-white' : ''
+                            className={`text-white/60 hover:text-white transition-colors p-1 ${inputText.trim() || selectedSurfaces.length > 0 ? 'text-white' : ''
                                 }`}
                         >
                             <ArrowUp className="w-6 h-6" />

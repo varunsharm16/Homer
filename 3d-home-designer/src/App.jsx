@@ -11,18 +11,27 @@ const initialProjects = [
   { id: 2, name: 'Project 2', floors: [1] },
 ];
 
-function InteractiveMesh({ position, args, color, onClick, name, type }) {
+// Selectable surface component
+function SelectableSurface({ position, args, color, name, isSelected, onSelect, rotation }) {
   const meshRef = useRef();
   const [hovered, setHovered] = useState(false);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    onSelect(name);
+  };
+
+  // Visual feedback colors
+  const baseColor = isSelected ? '#4a9eff' : color;
+  const emissiveColor = isSelected ? '#4a9eff' : (hovered ? color : '#000000');
+  const emissiveIntensity = isSelected ? 0.4 : (hovered ? 0.2 : 0);
 
   return (
     <mesh
       ref={meshRef}
       position={position}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick && onClick(name, type);
-      }}
+      rotation={rotation}
+      onClick={handleClick}
       onPointerOver={(e) => {
         e.stopPropagation();
         setHovered(true);
@@ -35,15 +44,53 @@ function InteractiveMesh({ position, args, color, onClick, name, type }) {
     >
       <boxGeometry args={args} />
       <meshStandardMaterial
-        color={color}
-        emissive={hovered ? color : '#000000'}
-        emissiveIntensity={hovered ? 0.3 : 0}
+        color={baseColor}
+        emissive={emissiveColor}
+        emissiveIntensity={emissiveIntensity}
       />
     </mesh>
   );
 }
 
-function Scene() {
+// Selectable floor component
+function SelectableFloor({ color, name, isSelected, onSelect }) {
+  const [hovered, setHovered] = useState(false);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    onSelect(name);
+  };
+
+  const baseColor = isSelected ? '#4a9eff' : color;
+  const emissiveColor = isSelected ? '#4a9eff' : (hovered ? color : '#000000');
+  const emissiveIntensity = isSelected ? 0.3 : (hovered ? 0.15 : 0);
+
+  return (
+    <mesh
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0, 0]}
+      onClick={handleClick}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        setHovered(true);
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        setHovered(false);
+        document.body.style.cursor = 'default';
+      }}
+    >
+      <planeGeometry args={[20, 20]} />
+      <meshStandardMaterial
+        color={baseColor}
+        emissive={emissiveColor}
+        emissiveIntensity={emissiveIntensity}
+      />
+    </mesh>
+  );
+}
+
+function Scene({ selectedSurfaces, onSelectSurface }) {
   return (
     <>
       <ambientLight intensity={0.6} />
@@ -51,15 +98,56 @@ function Scene() {
       <directionalLight position={[-10, 10, -5]} intensity={0.4} />
 
       {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#333" />
-      </mesh>
+      <SelectableFloor
+        color="#333"
+        name="floor1"
+        isSelected={selectedSurfaces.includes('floor1')}
+        onSelect={onSelectSurface}
+      />
 
-      {/* Demo Room */}
-      <InteractiveMesh position={[0, 2.5, -5]} args={[10, 5, 0.2]} color="#555" />
-      <InteractiveMesh position={[-5, 2.5, 0]} args={[0.2, 5, 10]} color="#555" />
-      <InteractiveMesh position={[0, 0.75, 0]} args={[3, 1, 2]} color="#8b6f47" />
+      {/* Walls */}
+      <SelectableSurface
+        position={[0, 2.5, -5]}
+        args={[10, 5, 0.2]}
+        color="#555"
+        name="wall1"
+        isSelected={selectedSurfaces.includes('wall1')}
+        onSelect={onSelectSurface}
+      />
+      <SelectableSurface
+        position={[-5, 2.5, 0]}
+        args={[0.2, 5, 10]}
+        color="#555"
+        name="wall2"
+        isSelected={selectedSurfaces.includes('wall2')}
+        onSelect={onSelectSurface}
+      />
+      <SelectableSurface
+        position={[5, 2.5, 0]}
+        args={[0.2, 5, 10]}
+        color="#555"
+        name="wall3"
+        isSelected={selectedSurfaces.includes('wall3')}
+        onSelect={onSelectSurface}
+      />
+      <SelectableSurface
+        position={[0, 2.5, 5]}
+        args={[10, 5, 0.2]}
+        color="#555"
+        name="wall4"
+        isSelected={selectedSurfaces.includes('wall4')}
+        onSelect={onSelectSurface}
+      />
+
+      {/* Furniture */}
+      <SelectableSurface
+        position={[0, 0.75, 0]}
+        args={[3, 1, 2]}
+        color="#8b6f47"
+        name="table1"
+        isSelected={selectedSurfaces.includes('table1')}
+        onSelect={onSelectSurface}
+      />
 
       <OrbitControls
         enableDamping
@@ -78,8 +166,25 @@ export default function App() {
   const [activeProjectId, setActiveProjectId] = useState(1);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const [selectedSurfaces, setSelectedSurfaces] = useState([]);
 
   const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
+
+  // Toggle surface selection (multi-select support)
+  const handleSelectSurface = (surfaceName) => {
+    setSelectedSurfaces(prev => {
+      if (prev.includes(surfaceName)) {
+        return prev.filter(s => s !== surfaceName);
+      } else {
+        return [...prev, surfaceName];
+      }
+    });
+  };
+
+  // Remove a selected surface
+  const handleRemoveSurface = (surfaceName) => {
+    setSelectedSurfaces(prev => prev.filter(s => s !== surfaceName));
+  };
 
   // Add a new project
   const handleAddProject = () => {
@@ -91,7 +196,7 @@ export default function App() {
 
   // Delete a project
   const handleDeleteProject = (projectId) => {
-    if (projects.length <= 1) return; // Keep at least one project
+    if (projects.length <= 1) return;
     const newProjects = projects.filter(p => p.id !== projectId);
     setProjects(newProjects);
     if (activeProjectId === projectId) {
@@ -128,9 +233,14 @@ export default function App() {
         rightSidebarOpen={rightSidebarOpen}
         onToggleLeftSidebar={() => setLeftSidebarOpen(!leftSidebarOpen)}
         onToggleRightSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
+        selectedSurfaces={selectedSurfaces}
+        onRemoveSurface={handleRemoveSurface}
       >
         <Canvas camera={{ position: [10, 10, 10], fov: 45 }} className="bg-[#222]">
-          <Scene />
+          <Scene
+            selectedSurfaces={selectedSurfaces}
+            onSelectSurface={handleSelectSurface}
+          />
         </Canvas>
       </CenterView>
 
