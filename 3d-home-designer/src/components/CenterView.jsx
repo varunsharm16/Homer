@@ -36,9 +36,8 @@ export default function CenterView({
 
             {/* ===== OVERLAYS ===== */}
 
-            {/* Top Left: Sidebar Toggle + Project Title */}
-            <div className="absolute top-6 left-6 z-10 flex items-center gap-4">
-                {/* Left Sidebar Toggle Button */}
+            {/* Top Left: Sidebar Toggle */}
+            <div className="absolute top-6 left-6 z-10">
                 <button
                     onClick={onToggleLeftSidebar}
                     className="w-10 h-10 rounded-lg bg-[#2a2a2a]/80 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:bg-[#2a2a2a] transition-all"
@@ -46,14 +45,13 @@ export default function CenterView({
                 >
                     {leftSidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeft size={20} />}
                 </button>
+            </div>
 
-                {/* Project Title with Dropdown */}
-                <button className="flex items-center gap-2 text-white group">
-                    <h1 className="text-3xl font-normal underline underline-offset-8 decoration-white/40">
-                        {projectName}
-                    </h1>
-                    <ChevronDown className="w-7 h-7 text-white/60 group-hover:text-white transition-colors" />
-                </button>
+            {/* Top Center: Project Title */}
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10">
+                <h1 className="text-xl font-normal text-white/80">
+                    {projectName}
+                </h1>
             </div>
 
             {/* Top Right: Sidebar Toggle */}
@@ -76,8 +74,8 @@ export default function CenterView({
                             key={floor}
                             onClick={() => setActiveFloor(floor)}
                             className={`text-right text-xl font-normal px-2 py-1 transition-all ${activeFloor === floor
-                                    ? 'text-white'
-                                    : 'text-white/40 hover:text-white/70'
+                                ? 'text-white'
+                                : 'text-white/40 hover:text-white/70'
                                 }`}
                         >
                             <span className={activeFloor === floor ? 'underline underline-offset-4' : ''}>
@@ -96,12 +94,7 @@ export default function CenterView({
 
             {/* Bottom Center: Chat Input Box */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 w-[500px] max-w-[90%]">
-                <div className="bg-[#2a2a2a]/90 backdrop-blur-md border border-white/20 rounded-2xl p-5">
-                    {/* Label */}
-                    <div className="text-white/50 text-sm uppercase tracking-wider mb-3">
-                        Add Anything
-                    </div>
-
+                <div className="bg-[#2a2a2a]/90 backdrop-blur-md border border-white/20 rounded-2xl p-4">
                     {/* Input Row */}
                     <div className="flex items-center gap-3">
                         {/* Plus Button - no circle */}
