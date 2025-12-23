@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import LeftSidebar from './components/LeftSidebar';
@@ -14,38 +14,47 @@ const initialProjects = [
 // Threshold for detecting drag vs click (in pixels)
 const DRAG_THRESHOLD = 5;
 
-// Selectable surface component with drag detection
-function SelectableSurface({ position, args, color, name, isSelected, onSelect, rotation }) {
-  const meshRef = useRef();
-  const [hovered, setHovered] = useState(false);
+// Custom hook for drag-aware click detection
+function useDragAwareClick(onSelect, name) {
   const pointerDownPos = useRef(null);
 
-  const handlePointerDown = (e) => {
+  const handlePointerDown = useCallback((e) => {
     e.stopPropagation();
     pointerDownPos.current = { x: e.clientX, y: e.clientY };
-  };
+  }, []);
 
-  const handlePointerUp = (e) => {
+  const handlePointerUp = useCallback((e) => {
     e.stopPropagation();
     if (pointerDownPos.current) {
       const dx = Math.abs(e.clientX - pointerDownPos.current.x);
       const dy = Math.abs(e.clientY - pointerDownPos.current.y);
-      // Only select if it wasn't a drag
       if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) {
         onSelect(name);
       }
     }
     pointerDownPos.current = null;
-  };
+  }, [onSelect, name]);
 
-  // Visual feedback colors
-  const baseColor = isSelected ? '#4a9eff' : color;
-  const emissiveColor = isSelected ? '#4a9eff' : (hovered ? color : '#000000');
-  const emissiveIntensity = isSelected ? 0.4 : (hovered ? 0.2 : 0);
+  const handlePointerOut = useCallback(() => {
+    pointerDownPos.current = null;
+  }, []);
+
+  return { handlePointerDown, handlePointerUp, handlePointerOut };
+}
+
+// Selectable surface component
+function SelectableSurface({ position, args, color, name, isSelected, onSelect, rotation }) {
+  const [hovered, setHovered] = useState(false);
+  const { handlePointerDown, handlePointerUp, handlePointerOut } = useDragAwareClick(onSelect, name);
+
+  const { baseColor, emissiveColor, emissiveIntensity } = useMemo(() => ({
+    baseColor: isSelected ? '#4a9eff' : color,
+    emissiveColor: isSelected ? '#4a9eff' : (hovered ? color : '#000000'),
+    emissiveIntensity: isSelected ? 0.4 : (hovered ? 0.2 : 0)
+  }), [isSelected, color, hovered]);
 
   return (
     <mesh
-      ref={meshRef}
       position={position}
       rotation={rotation}
       onPointerDown={handlePointerDown}
@@ -58,7 +67,7 @@ function SelectableSurface({ position, args, color, name, isSelected, onSelect, 
       onPointerOut={() => {
         setHovered(false);
         document.body.style.cursor = 'default';
-        pointerDownPos.current = null;
+        handlePointerOut();
       }}
     >
       <boxGeometry args={args} />
@@ -71,31 +80,16 @@ function SelectableSurface({ position, args, color, name, isSelected, onSelect, 
   );
 }
 
-// Selectable floor component with drag detection
+// Selectable floor component
 function SelectableFloor({ color, name, isSelected, onSelect }) {
   const [hovered, setHovered] = useState(false);
-  const pointerDownPos = useRef(null);
+  const { handlePointerDown, handlePointerUp, handlePointerOut } = useDragAwareClick(onSelect, name);
 
-  const handlePointerDown = (e) => {
-    e.stopPropagation();
-    pointerDownPos.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handlePointerUp = (e) => {
-    e.stopPropagation();
-    if (pointerDownPos.current) {
-      const dx = Math.abs(e.clientX - pointerDownPos.current.x);
-      const dy = Math.abs(e.clientY - pointerDownPos.current.y);
-      if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) {
-        onSelect(name);
-      }
-    }
-    pointerDownPos.current = null;
-  };
-
-  const baseColor = isSelected ? '#4a9eff' : color;
-  const emissiveColor = isSelected ? '#4a9eff' : (hovered ? color : '#000000');
-  const emissiveIntensity = isSelected ? 0.3 : (hovered ? 0.15 : 0);
+  const { baseColor, emissiveColor, emissiveIntensity } = useMemo(() => ({
+    baseColor: isSelected ? '#4a9eff' : color,
+    emissiveColor: isSelected ? '#4a9eff' : (hovered ? color : '#000000'),
+    emissiveIntensity: isSelected ? 0.3 : (hovered ? 0.15 : 0)
+  }), [isSelected, color, hovered]);
 
   return (
     <mesh
@@ -111,7 +105,7 @@ function SelectableFloor({ color, name, isSelected, onSelect }) {
       onPointerOut={() => {
         setHovered(false);
         document.body.style.cursor = 'default';
-        pointerDownPos.current = null;
+        handlePointerOut();
       }}
     >
       <planeGeometry args={[20, 20]} />
@@ -203,62 +197,68 @@ export default function App() {
   const [selectedSurfaces, setSelectedSurfaces] = useState([]);
   const [uploadedImages, setUploadedImages] = useState([]);
 
-  const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
+  const activeProject = useMemo(() =>
+    projects.find(p => p.id === activeProjectId) || projects[0],
+    [projects, activeProjectId]
+  );
 
   // Toggle surface selection (multi-select support)
-  const handleSelectSurface = (surfaceName) => {
-    setSelectedSurfaces(prev => {
-      if (prev.includes(surfaceName)) {
-        return prev.filter(s => s !== surfaceName);
-      } else {
-        return [...prev, surfaceName];
-      }
-    });
-  };
+  const handleSelectSurface = useCallback((surfaceName) => {
+    setSelectedSurfaces(prev =>
+      prev.includes(surfaceName)
+        ? prev.filter(s => s !== surfaceName)
+        : [...prev, surfaceName]
+    );
+  }, []);
 
   // Remove a selected surface
-  const handleRemoveSurface = (surfaceName) => {
+  const handleRemoveSurface = useCallback((surfaceName) => {
     setSelectedSurfaces(prev => prev.filter(s => s !== surfaceName));
-  };
+  }, []);
 
   // Handle image upload
-  const handleImageUpload = (imageData) => {
+  const handleImageUpload = useCallback((imageData) => {
     setUploadedImages(prev => [...prev, imageData]);
-  };
+  }, []);
 
   // Remove an uploaded image
-  const handleRemoveImage = (index) => {
+  const handleRemoveImage = useCallback((index) => {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
   // Add a new project
-  const handleAddProject = () => {
+  const handleAddProject = useCallback(() => {
     const newId = Math.max(...projects.map(p => p.id), 0) + 1;
     const newProject = { id: newId, name: `Project ${newId}`, floors: [1] };
-    setProjects([...projects, newProject]);
+    setProjects(prev => [...prev, newProject]);
     setActiveProjectId(newId);
-  };
+  }, [projects]);
 
   // Delete a project
-  const handleDeleteProject = (projectId) => {
+  const handleDeleteProject = useCallback((projectId) => {
     if (projects.length <= 1) return;
-    const newProjects = projects.filter(p => p.id !== projectId);
-    setProjects(newProjects);
-    if (activeProjectId === projectId) {
-      setActiveProjectId(newProjects[0].id);
-    }
-  };
+    setProjects(prev => {
+      const newProjects = prev.filter(p => p.id !== projectId);
+      if (activeProjectId === projectId) {
+        setActiveProjectId(newProjects[0].id);
+      }
+      return newProjects;
+    });
+  }, [projects.length, activeProjectId]);
 
   // Edit project name
-  const handleEditProject = (projectId, newName) => {
-    setProjects(projects.map(p =>
+  const handleEditProject = useCallback((projectId, newName) => {
+    setProjects(prev => prev.map(p =>
       p.id === projectId ? { ...p, name: newName } : p
     ));
-  };
+  }, []);
+
+  // Toggle handlers
+  const toggleLeftSidebar = useCallback(() => setLeftSidebarOpen(prev => !prev), []);
+  const toggleRightSidebar = useCallback(() => setRightSidebarOpen(prev => !prev), []);
 
   return (
     <div className="flex w-full h-screen bg-[#111] overflow-hidden font-sans">
-
       {/* Left Sidebar: Projects */}
       <LeftSidebar
         projects={projects}
@@ -276,8 +276,8 @@ export default function App() {
         floors={activeProject?.floors || [1]}
         leftSidebarOpen={leftSidebarOpen}
         rightSidebarOpen={rightSidebarOpen}
-        onToggleLeftSidebar={() => setLeftSidebarOpen(!leftSidebarOpen)}
-        onToggleRightSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
+        onToggleLeftSidebar={toggleLeftSidebar}
+        onToggleRightSidebar={toggleRightSidebar}
         selectedSurfaces={selectedSurfaces}
         onRemoveSurface={handleRemoveSurface}
         uploadedImages={uploadedImages}
@@ -294,7 +294,6 @@ export default function App() {
 
       {/* Right Sidebar: Products */}
       <RightSidebar isOpen={rightSidebarOpen} />
-
     </div>
   );
 }
