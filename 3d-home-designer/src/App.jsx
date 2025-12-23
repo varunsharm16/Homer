@@ -226,6 +226,11 @@ export default function App() {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   }, []);
 
+  // Clear all uploaded images
+  const handleClearImages = useCallback(() => {
+    setUploadedImages([]);
+  }, []);
+
   // Add a new project
   const handleAddProject = useCallback(() => {
     const newId = Math.max(...projects.map(p => p.id), 0) + 1;
@@ -283,6 +288,7 @@ export default function App() {
         uploadedImages={uploadedImages}
         onImageUpload={handleImageUpload}
         onRemoveImage={handleRemoveImage}
+        onClearImages={handleClearImages}
       >
         <Canvas camera={{ position: [10, 10, 10], fov: 45 }} className="bg-[#222]">
           <Scene
