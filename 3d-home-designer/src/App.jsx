@@ -11,14 +11,31 @@ const initialProjects = [
   { id: 2, name: 'Project 2', floors: [1] },
 ];
 
-// Selectable surface component
+// Threshold for detecting drag vs click (in pixels)
+const DRAG_THRESHOLD = 5;
+
+// Selectable surface component with drag detection
 function SelectableSurface({ position, args, color, name, isSelected, onSelect, rotation }) {
   const meshRef = useRef();
   const [hovered, setHovered] = useState(false);
+  const pointerDownPos = useRef(null);
 
-  const handleClick = (e) => {
+  const handlePointerDown = (e) => {
     e.stopPropagation();
-    onSelect(name);
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handlePointerUp = (e) => {
+    e.stopPropagation();
+    if (pointerDownPos.current) {
+      const dx = Math.abs(e.clientX - pointerDownPos.current.x);
+      const dy = Math.abs(e.clientY - pointerDownPos.current.y);
+      // Only select if it wasn't a drag
+      if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) {
+        onSelect(name);
+      }
+    }
+    pointerDownPos.current = null;
   };
 
   // Visual feedback colors
@@ -31,7 +48,8 @@ function SelectableSurface({ position, args, color, name, isSelected, onSelect, 
       ref={meshRef}
       position={position}
       rotation={rotation}
-      onClick={handleClick}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
       onPointerOver={(e) => {
         e.stopPropagation();
         setHovered(true);
@@ -40,6 +58,7 @@ function SelectableSurface({ position, args, color, name, isSelected, onSelect, 
       onPointerOut={() => {
         setHovered(false);
         document.body.style.cursor = 'default';
+        pointerDownPos.current = null;
       }}
     >
       <boxGeometry args={args} />
@@ -52,13 +71,26 @@ function SelectableSurface({ position, args, color, name, isSelected, onSelect, 
   );
 }
 
-// Selectable floor component
+// Selectable floor component with drag detection
 function SelectableFloor({ color, name, isSelected, onSelect }) {
   const [hovered, setHovered] = useState(false);
+  const pointerDownPos = useRef(null);
 
-  const handleClick = (e) => {
+  const handlePointerDown = (e) => {
     e.stopPropagation();
-    onSelect(name);
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handlePointerUp = (e) => {
+    e.stopPropagation();
+    if (pointerDownPos.current) {
+      const dx = Math.abs(e.clientX - pointerDownPos.current.x);
+      const dy = Math.abs(e.clientY - pointerDownPos.current.y);
+      if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) {
+        onSelect(name);
+      }
+    }
+    pointerDownPos.current = null;
   };
 
   const baseColor = isSelected ? '#4a9eff' : color;
@@ -69,7 +101,8 @@ function SelectableFloor({ color, name, isSelected, onSelect }) {
     <mesh
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, 0, 0]}
-      onClick={handleClick}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
       onPointerOver={(e) => {
         e.stopPropagation();
         setHovered(true);
@@ -78,6 +111,7 @@ function SelectableFloor({ color, name, isSelected, onSelect }) {
       onPointerOut={() => {
         setHovered(false);
         document.body.style.cursor = 'default';
+        pointerDownPos.current = null;
       }}
     >
       <planeGeometry args={[20, 20]} />
@@ -167,6 +201,7 @@ export default function App() {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const [selectedSurfaces, setSelectedSurfaces] = useState([]);
+  const [uploadedImages, setUploadedImages] = useState([]);
 
   const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
 
@@ -184,6 +219,16 @@ export default function App() {
   // Remove a selected surface
   const handleRemoveSurface = (surfaceName) => {
     setSelectedSurfaces(prev => prev.filter(s => s !== surfaceName));
+  };
+
+  // Handle image upload
+  const handleImageUpload = (imageData) => {
+    setUploadedImages(prev => [...prev, imageData]);
+  };
+
+  // Remove an uploaded image
+  const handleRemoveImage = (index) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   // Add a new project
@@ -235,6 +280,9 @@ export default function App() {
         onToggleRightSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
         selectedSurfaces={selectedSurfaces}
         onRemoveSurface={handleRemoveSurface}
+        uploadedImages={uploadedImages}
+        onImageUpload={handleImageUpload}
+        onRemoveImage={handleRemoveImage}
       >
         <Canvas camera={{ position: [10, 10, 10], fov: 45 }} className="bg-[#222]">
           <Scene
