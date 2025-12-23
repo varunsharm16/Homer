@@ -5,26 +5,11 @@ import LeftSidebar from './components/LeftSidebar';
 import RightSidebar from './components/RightSidebar';
 import CenterView from './components/CenterView';
 
-// Mock project data
-const mockProjects = [
-  { id: 1, name: 'Project 1' },
-  { id: 2, name: 'Project 2' },
+// Initial project data
+const initialProjects = [
+  { id: 1, name: 'Project 1', floors: [1, 2] },
+  { id: 2, name: 'Project 2', floors: [1] },
 ];
-
-// Material options (kept for reference/future use)
-const materialOptions = {
-  wall: [
-    { name: 'Pure White', color: '#ffffff' },
-    { name: 'Warm Grey', color: '#e5e5e5' },
-    { name: 'Charcoal', color: '#2d2d2d' },
-  ],
-  floor: [
-    { name: 'Oak', color: '#c19a6b' },
-    { name: 'Walnut', color: '#5c4033' },
-  ],
-};
-
-// Reusing the InteractiveMesh and Scene logic, simplified for the new view
 
 function InteractiveMesh({ position, args, color, onClick, name, type }) {
   const meshRef = useRef();
@@ -72,9 +57,9 @@ function Scene() {
       </mesh>
 
       {/* Demo Room */}
-      <InteractiveMesh position={[0, 2.5, -5]} args={[10, 5, 0.2]} color="#555" /> {/* Back Wall */}
-      <InteractiveMesh position={[-5, 2.5, 0]} args={[0.2, 5, 10]} color="#555" /> {/* Left Wall */}
-      <InteractiveMesh position={[0, 0.75, 0]} args={[3, 1, 2]} color="#8b6f47" /> {/* Furniture */}
+      <InteractiveMesh position={[0, 2.5, -5]} args={[10, 5, 0.2]} color="#555" />
+      <InteractiveMesh position={[-5, 2.5, 0]} args={[0.2, 5, 10]} color="#555" />
+      <InteractiveMesh position={[0, 0.75, 0]} args={[3, 1, 2]} color="#8b6f47" />
 
       <OrbitControls
         enableDamping
@@ -89,26 +74,56 @@ function Scene() {
 
 
 export default function App() {
+  const [projects, setProjects] = useState(initialProjects);
   const [activeProjectId, setActiveProjectId] = useState(1);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
 
-  const activeProject = mockProjects.find(p => p.id === activeProjectId) || mockProjects[0];
+  const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
+
+  // Add a new project
+  const handleAddProject = () => {
+    const newId = Math.max(...projects.map(p => p.id), 0) + 1;
+    const newProject = { id: newId, name: `Project ${newId}`, floors: [1] };
+    setProjects([...projects, newProject]);
+    setActiveProjectId(newId);
+  };
+
+  // Delete a project
+  const handleDeleteProject = (projectId) => {
+    if (projects.length <= 1) return; // Keep at least one project
+    const newProjects = projects.filter(p => p.id !== projectId);
+    setProjects(newProjects);
+    if (activeProjectId === projectId) {
+      setActiveProjectId(newProjects[0].id);
+    }
+  };
+
+  // Edit project name
+  const handleEditProject = (projectId, newName) => {
+    setProjects(projects.map(p =>
+      p.id === projectId ? { ...p, name: newName } : p
+    ));
+  };
 
   return (
     <div className="flex w-full h-screen bg-[#111] overflow-hidden font-sans">
 
       {/* Left Sidebar: Projects */}
       <LeftSidebar
-        projects={mockProjects}
+        projects={projects}
         activeProjectId={activeProjectId}
         onSelectProject={setActiveProjectId}
+        onAddProject={handleAddProject}
+        onDeleteProject={handleDeleteProject}
+        onEditProject={handleEditProject}
         isOpen={leftSidebarOpen}
       />
 
       {/* Center: 3D View & Chat */}
       <CenterView
-        projectName={activeProject.name}
+        projectName={activeProject?.name || 'Untitled'}
+        floors={activeProject?.floors || [1]}
         leftSidebarOpen={leftSidebarOpen}
         rightSidebarOpen={rightSidebarOpen}
         onToggleLeftSidebar={() => setLeftSidebarOpen(!leftSidebarOpen)}

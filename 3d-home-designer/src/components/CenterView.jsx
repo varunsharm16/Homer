@@ -1,15 +1,31 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, ArrowUp, Plus, PanelLeftClose, PanelRightClose, PanelLeft, PanelRight } from 'lucide-react';
+import { ChevronDown, ArrowUp, Plus, PanelLeftClose, PanelRightClose, PanelLeft, PanelRight } from 'lucide-react';
 
 export default function CenterView({
     children,
     projectName,
+    floors = [1, 2],
     leftSidebarOpen,
     rightSidebarOpen,
     onToggleLeftSidebar,
     onToggleRightSidebar
 }) {
     const [activeFloor, setActiveFloor] = useState(1);
+    const [inputText, setInputText] = useState('');
+
+    const handleSubmit = () => {
+        if (inputText.trim()) {
+            console.log('Submitted:', inputText);
+            setInputText('');
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit();
+        }
+    };
 
     return (
         <div className="flex-1 relative bg-[#3a3a3a] h-full overflow-hidden">
@@ -51,28 +67,29 @@ export default function CenterView({
                 </button>
             </div>
 
-            {/* Left Side: Floor Selector (below project title) */}
-            <div className="absolute top-24 left-6 z-10 flex flex-col gap-1">
-                {[2, 1].map((floor) => (
-                    <button
-                        key={floor}
-                        onClick={() => setActiveFloor(floor)}
-                        className={`text-left text-xl font-normal px-2 py-1 transition-all ${activeFloor === floor
-                                ? 'text-white'
-                                : 'text-white/40 hover:text-white/70'
-                            }`}
-                    >
-                        <span className={activeFloor === floor ? 'underline underline-offset-4' : ''}>
-                            floor {floor}
-                        </span>
-                    </button>
-                ))}
-            </div>
+            {/* Right Side: Floor Selector + Navigation Indicator */}
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
+                {/* Floor Labels */}
+                <div className="flex flex-col gap-1 mb-4">
+                    {[...floors].sort((a, b) => b - a).map((floor) => (
+                        <button
+                            key={floor}
+                            onClick={() => setActiveFloor(floor)}
+                            className={`text-right text-xl font-normal px-2 py-1 transition-all ${activeFloor === floor
+                                    ? 'text-white'
+                                    : 'text-white/40 hover:text-white/70'
+                                }`}
+                        >
+                            <span className={activeFloor === floor ? 'underline underline-offset-4' : ''}>
+                                floor {floor}
+                            </span>
+                        </button>
+                    ))}
+                </div>
 
-            {/* Right Side: Vertical scroll/navigation indicator */}
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10">
+                {/* Vertical Navigation Indicator */}
                 <div className="flex flex-col items-center text-white/30">
-                    <div className="w-px h-32 bg-gradient-to-b from-transparent via-white/30 to-transparent" />
+                    <div className="w-px h-24 bg-gradient-to-b from-transparent via-white/30 to-transparent" />
                     <ChevronDown className="w-6 h-6 mt-2" />
                 </div>
             </div>
@@ -81,19 +98,33 @@ export default function CenterView({
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 w-[500px] max-w-[90%]">
                 <div className="bg-[#2a2a2a]/90 backdrop-blur-md border border-white/20 rounded-2xl p-5">
                     {/* Label */}
-                    <div className="text-white/50 text-sm uppercase tracking-wider mb-4">
+                    <div className="text-white/50 text-sm uppercase tracking-wider mb-3">
                         Add Anything
                     </div>
 
                     {/* Input Row */}
-                    <div className="flex items-center justify-between">
-                        {/* Plus Button */}
-                        <button className="w-12 h-12 rounded-full border-2 border-white/40 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/60 transition-all">
+                    <div className="flex items-center gap-3">
+                        {/* Plus Button - no circle */}
+                        <button className="text-white/60 hover:text-white transition-colors p-1">
                             <Plus className="w-6 h-6" />
                         </button>
 
-                        {/* Send Button */}
-                        <button className="w-12 h-12 rounded-full border-2 border-white/40 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/60 transition-all">
+                        {/* Text Input */}
+                        <input
+                            type="text"
+                            value={inputText}
+                            onChange={(e) => setInputText(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Describe what you want to add..."
+                            className="flex-1 bg-transparent border-none outline-none text-white placeholder-white/30 text-base"
+                        />
+
+                        {/* Send Button - no circle */}
+                        <button
+                            onClick={handleSubmit}
+                            className={`text-white/60 hover:text-white transition-colors p-1 ${inputText.trim() ? 'text-white' : ''
+                                }`}
+                        >
                             <ArrowUp className="w-6 h-6" />
                         </button>
                     </div>
