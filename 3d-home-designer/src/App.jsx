@@ -4,6 +4,8 @@ import { OrbitControls } from '@react-three/drei';
 import LeftSidebar from './components/LeftSidebar';
 import RightSidebar from './components/RightSidebar';
 import CenterView from './components/CenterView';
+import { FurnitureObject } from './lib/furniture';
+import { useSceneStore } from './lib/sceneStore';
 
 // Initial project data
 const initialProjects = [
@@ -119,6 +121,9 @@ function SelectableFloor({ color, name, isSelected, onSelect }) {
 }
 
 function Scene({ selectedSurfaces, onSelectSurface }) {
+  // Get objects from scene store
+  const sceneObjects = useSceneStore((state) => state.scene.objects);
+
   return (
     <>
       <ambientLight intensity={0.6} />
@@ -167,15 +172,23 @@ function Scene({ selectedSurfaces, onSelectSurface }) {
         onSelect={onSelectSurface}
       />
 
-      {/* Furniture */}
-      <SelectableSurface
-        position={[0, 0.75, 0]}
-        args={[3, 1, 2]}
-        color="#8b6f47"
-        name="table1"
-        isSelected={selectedSurfaces.includes('table1')}
-        onSelect={onSelectSurface}
-      />
+      {/* Static demo furniture */}
+      <FurnitureObject type="sofa" position={[0, 0, 2]} rotation={0} />
+      <FurnitureObject type="coffee_table" position={[0, 0, 0]} rotation={0} />
+      <FurnitureObject type="armchair" position={[-2.5, 0, 0]} rotation={90} />
+      <FurnitureObject type="armchair" position={[2.5, 0, 0]} rotation={-90} />
+      <FurnitureObject type="bookshelf" position={[-4.5, 0, -2]} rotation={90} />
+
+      {/* Dynamic furniture from scene store */}
+      {sceneObjects.map((obj) => (
+        <FurnitureObject
+          key={obj.id}
+          type={obj.type}
+          position={obj.position}
+          rotation={obj.rotation || 0}
+          color={obj.color}
+        />
+      ))}
 
       <OrbitControls
         enableDamping

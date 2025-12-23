@@ -1,116 +1,122 @@
-# 3D Home Designer - iOS App
+# Homer - 3D Home Designer
 
-A native iOS application built with Swift UI featuring SceneKit 3D rendering and liquid glass UI design.
+A web-based AI-powered home design application that transforms 2D floor plans into interactive 3D models.
 
-## Opening the Project in Xcode
+## Features
 
-Since this is a manual Swift UI project structure, you'll need to create an Xcode project:
+- **Floor Plan → 3D Conversion**: Upload a floor plan image and AI extracts rooms, walls, and dimensions to generate a 3D model
+- **Natural Language Editing**: Describe changes like "add a sofa in the living room" and AI applies them
+- **Interactive 3D Viewer**: Orbit, zoom, and click surfaces to select and customize
+- **Multi-Surface Selection**: Click multiple walls/floors to batch-apply materials
+- **Image-Based Styling**: Upload furniture photos or material swatches to apply styles
 
-### Option 1: Create New Xcode Project (Recommended)
+## Tech Stack
 
-1. Open **Xcode**
-2. Select **File > New > Project**
-3. Choose **iOS > App**
-4. Configure:
-   - Product Name: `3D-Home-Designer`
-   - Interface: **SwiftUI**
-   - Language: **Swift**
-   - Minimum Deployments: **iOS 16.0**
-5. Click **Next** and save to `/Users/varun/Homer/3D-Home-Designer/`
-6. **Replace** the auto-generated files with our custom files from the `3D-Home-Designer/` folder
-
-### Option 2: Import Files Manually
-
-1. Create a new Xcode project as above
-2. In Xcode project navigator, **delete** the default `ContentView.swift` and other auto-generated files
-3. **Drag and drop** all folders from our `3D-Home-Designer/3D-Home-Designer/` directory into Xcode
-4. Ensure "Copy items if needed" is checked
-5. Select "Create groups"
-6. Replace the `Info.plist` with our custom one
+| Layer | Technology |
+|-------|------------|
+| Frontend | React + Vite |
+| 3D Rendering | Three.js + React Three Fiber |
+| State | Zustand |
+| Styling | Tailwind CSS |
+| AI | OpenAI GPT-4o / GPT-4o-mini |
+| Backend | Vercel Serverless Functions |
 
 ## Project Structure
 
 ```
-3D-Home-Designer/
-├── App/
-│   └── HomeDesignerApp.swift          # App entry point
-├── Models/
-│   ├── Project.swift                   # Project data model
-│   └── RoomObject.swift                # 3D object model
-├── ViewModels/
-│   ├── ProjectsViewModel.swift         # Projects state
-│   └── SceneViewModel.swift            # 3D scene state
-├── Views/
-│   ├── ContentView.swift               # Main app orchestrator
-│   ├── ProjectsView.swift              # Projects dashboard
-│   ├── ProductsView.swift              # Products catalog
-│   ├── ProfileView.swift               # Profile view
-│   ├── SceneEditorView.swift           # 3D editor screen
-│   └── Components/
-│       ├── GlassTabBar.swift           # Custom tab bar
-│       ├── LoadingView.swift           # Loading animation
-│       ├── UploadSheet.swift           # Photo selection sheet
-│       └── MaterialSheet.swift         # Material selection sheet
-├── SceneKit/
-│   ├── SceneKitView.swift              # SceneKit wrapper
-│   └── RoomScene.swift                 # 3D scene construction
-├── Design/
-│   ├── LiquidGlass.swift               # Glassmorphism modifiers
-│   └── Colors.swift                    # Color palette
-└── Info.plist                          # App configuration
+3d-home-designer/
+├── api/                        # Serverless API routes
+│   ├── classify-image.js       # Image type classification
+│   ├── parse-floorplan.js      # Floor plan → Scene DSL
+│   └── scene-command.js        # NL command → scene operations
+├── public/
+│   └── models/                 # 3D furniture models (GLTF)
+├── src/
+│   ├── components/
+│   │   ├── CenterView.jsx      # 3D canvas + chat input
+│   │   ├── LeftSidebar.jsx     # Projects list
+│   │   └── RightSidebar.jsx    # Products catalog
+│   ├── lib/
+│   │   ├── sceneStore.js       # Zustand scene state
+│   │   └── api.js              # API client utilities
+│   ├── App.jsx                 # Main application
+│   └── main.jsx                # Entry point
+├── vercel.json                 # Deployment config
+└── package.json
 ```
 
-## Features Implemented
+## Getting Started
 
-- ✅ Liquid glass UI with Material blur effects
-- ✅ Custom glassmorphic tab bar navigation
-- ✅ Projects dashboard with mock data
-- ✅ Upload sheet with camera/library options
-- ✅ Loading animation (2.5s scanning simulation)
-- ✅ Full 3D SceneKit scene with room geometry
-- ✅ Interactive object selection via raycasting
-- ✅ Material selection bottom sheet
-- ✅ Real-time color updates on 3D objects
-- ✅ Smooth animations and transitions
+### Prerequisites
+- Node.js 18+
+- npm or yarn
 
-## Running the App
+### Installation
 
-### In Xcode Simulator
-1. Select target device (e.g., **iPhone 15 Pro**)
-2. Press **⌘ + R** to build and run
-3. Test all features in the simulator
+```bash
+cd 3d-home-designer
+npm install
+```
 
-### On Physical Device
-1. Connect your iPhone via USB
-2. Select your device from the target menu
-3. Enable **Developer Mode** on your iPhone (Settings > Privacy & Security)
-4. Trust your Mac if prompted
-5. Press **⌘ + R** to build and run
+### Development
 
-## How to Use
+```bash
+npm run dev
+```
 
-1. **Projects Tab**: Browse recent designs, tap **"+"** to create new
-2. **Upload**: Choose camera or library option
-3. **Loading**: Wait for "scanning" animation
-4. **3D Editor**: 
-   - Pinch to zoom
-   - Drag to rotate camera
-   - Tap walls, floor, or island to select
-5. **Materials**: Choose colors from swatches
-6. **Real-time Update**: See changes immediately
+Open [http://localhost:5173](http://localhost:5173)
 
-## Requirements
+### Deployment
 
-- **Xcode 15+**
-- **iOS 16.0+** deployment target
-- **Swift 5.9+**
+```bash
+# Install Vercel CLI
+npm i -g vercel
 
-## Next Steps
+# Add OpenAI API key
+vercel env add OPENAI_API_KEY
 
-To fully integrate this into Xcode:
-1. Follow "Option 1" above to create the Xcode project
-2. Build the project to ensure no errors
-3. Run on simulator or device
-4. Test all interactions
+# Deploy
+vercel --prod
+```
 
-The app is ready to run!
+## Usage
+
+1. **Create Project**: Click "+" in the left sidebar
+2. **Upload Floor Plan**: Click "+" in chat box → Upload Photo
+3. **Confirm Preview**: Review detected rooms, click "Generate 3D"
+4. **Customize**: 
+   - Click surfaces to select
+   - Type commands like "paint the walls blue"
+   - Upload material photos to apply textures
+5. **Navigate**: Drag to orbit, scroll to zoom
+
+## API Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/classify-image` | Classify image type (floor_plan, furniture, material, room_photo) |
+| `POST /api/parse-floorplan` | Extract Scene DSL from floor plan image |
+| `POST /api/scene-command` | Execute natural language command on scene |
+
+## Scene DSL Schema
+
+```json
+{
+  "version": "1.0",
+  "rooms": [{ "id": "room_1", "name": "Kitchen", "bounds": [[0,0], [10,8]], "height": 9 }],
+  "walls": [{ "id": "wall_1", "from": [0,0], "to": [10,0], "height": 9 }],
+  "openings": [{ "id": "door_1", "wallId": "wall_1", "type": "door", "position": 3,  "width": 3 }],
+  "objects": [{ "id": "obj_1", "type": "sofa", "position": [5,0,3], "rotation": 90 }],
+  "materials": { "wall_1": { "type": "paint", "color": "#ffffff" } }
+}
+```
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `OPENAI_API_KEY` | OpenAI API key for GPT-4o/4o-mini |
+
+## License
+
+MIT
