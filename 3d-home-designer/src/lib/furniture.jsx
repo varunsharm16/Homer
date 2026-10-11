@@ -12,7 +12,6 @@ import * as THREE from 'three';
 
 // Shared materials
 const woodMaterial = { color: '#8B4513', roughness: 0.8 };
-const fabricMaterial = { color: '#4A5568', roughness: 0.9 };
 const metalMaterial = { color: '#718096', metalness: 0.8, roughness: 0.2 };
 
 // ============ SEATING ============
