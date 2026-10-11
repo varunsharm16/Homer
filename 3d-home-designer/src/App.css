@@ -445,15 +445,12 @@
   position: relative;
   width: 53px;
   height: 290px;
-  border-radius: 27px;
-  background: #595044;
   overflow: hidden;
   mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent);
-  box-shadow: inset 0 0 15px #322b2315;
 }
 .rail-tick {
   position: absolute;
-  left: 9px;
+  right: 9px;
   height: 3px;
   background: #988e7f;
   opacity: 0.55;
